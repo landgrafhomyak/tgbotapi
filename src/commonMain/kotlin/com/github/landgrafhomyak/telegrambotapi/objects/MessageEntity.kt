@@ -2,21 +2,20 @@
 
 package com.github.landgrafhomyak.telegrambotapi.objects
 
+import com.github.landgrafhomyak.telegrambotapi.serialization.GenerateSerializer
+import com.github.landgrafhomyak.telegrambotapi.serialization.GenerateSerializerByDiscriminator
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.serializer
 
 // TODO: waiting for serialization plugin support
 private object MessageEntitySerializer : JsonContentPolymorphicSerializer<MessageEntity>(MessageEntity::class) {
@@ -58,73 +57,90 @@ private class SuppressTypeFieldSerializer<T : MessageEntity>(targetSerializer: K
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable(with = MessageEntitySerializer::class)
-@JsonClassDiscriminator("type")
+@GenerateSerializerByDiscriminator("type", "MessageEntitySerializer")
 sealed class MessageEntity {
     abstract val offset: ULong
     abstract val length: ULong
 
+    //    @Serializable(with=MessageEntityMentionSerializer::class)
     @Serializable
     @SerialName("mention")
+    @GenerateSerializer("MessageEntityMentionSerializer")
     class Mention(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("hashtag")
+    @GenerateSerializer("MessageEntityHashTagSerializer")
     class HashTag(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Suppress("SpellCheckingInspection")
     @Serializable
     @SerialName("cashtag")
+    @GenerateSerializer("MessageEntityCachTagSerializer")
     class CashTag(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("bot_command")
+    @GenerateSerializer("MessageEntityBotCommandSerializer")
     class BotCommand(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("url")
+    @GenerateSerializer("MessageEntityUrlSerializer")
     class Url(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("email")
+    @GenerateSerializer("MessageEntityEmailSerializer")
     class Email(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("phone_number")
+    @GenerateSerializer("MessageEntityPhoneNumberSerializer")
     class PhoneNumber(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("bold")
+    @GenerateSerializer("MessageEntityBoldSerializer")
     class Bold(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("italic")
+    @GenerateSerializer("MessageEntityItalicSerializer")
     class Italic(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("underline")
+    @GenerateSerializer("MessageEntityUnderlineSerializer")
     class Underline(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("strikethrough")
+    @GenerateSerializer("MessageEntityStrikethroughSerializer")
     class Strikethrough(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("spoiler")
+    @GenerateSerializer("MessageEntitySpoilerSerializer")
     class Spoiler(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("code")
+    @GenerateSerializer("MessageEntityCodeSerializer")
     class Code(override val offset: ULong, override val length: ULong) : MessageEntity()
 
     @Serializable
     @SerialName("pre")
+    @GenerateSerializer("MessageEntityPreSerializer")
     class Pre(override val offset: ULong, override val length: ULong, val language: String) : MessageEntity()
 
     @Serializable
     @SerialName("text_link")
+    @GenerateSerializer("MessageEntityTextLinkSerializer")
     class TextLink(override val offset: ULong, override val length: ULong, val url: String) : MessageEntity()
 
     @Serializable
     @SerialName("text_mention")
+    @GenerateSerializer("MessageEntityTextMentionSerializer")
     class TextMention(override val offset: ULong, override val length: ULong, val user: User) : MessageEntity()
 }
