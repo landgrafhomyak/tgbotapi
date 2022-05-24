@@ -1,1 +1,1 @@
-rootProject.name = "telegrambotapi"
+rootProject.name = "tgbotapi"
