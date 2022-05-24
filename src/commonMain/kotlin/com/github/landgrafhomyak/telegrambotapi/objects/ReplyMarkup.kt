@@ -1,12 +1,18 @@
 package com.github.landgrafhomyak.telegrambotapi.objects
 
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.SealedClassSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
@@ -31,7 +37,7 @@ class ReplyKeyboardMarkup(
     @SerialName("input_field_placeholder")
     val inputFieldPlaceholder: String? = null,
     val selective: Boolean? = null
-)
+) : ReplyMarkup()
 
 private object ReplyKeyboardButtonSerializer : JsonContentPolymorphicSerializer<ReplyKeyboardButton>(ReplyKeyboardButton::class) {
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out ReplyKeyboardButton> {
@@ -94,7 +100,7 @@ sealed class ReplyKeyboardButton {
         override val text: String,
         @SerialName("request_poll")
         @Serializable(with = KeyboardButtonPollTypeSerializer::class)
-        val requestPoll: KeyboardButtonPollType?
+        val requestPoll: PollType?
     ) : ReplyKeyboardButton()
 
     @Serializable
@@ -105,16 +111,16 @@ sealed class ReplyKeyboardButton {
     ) : ReplyKeyboardButton()
 }
 
-private object KeyboardButtonPollTypeSerializer : KSerializer<KeyboardButtonPollType?> {
-    override fun deserialize(decoder: Decoder): KeyboardButtonPollType? {
+private object KeyboardButtonPollTypeSerializer : KSerializer<PollType?> {
+    override fun deserialize(decoder: Decoder): PollType? {
         if (decoder is JsonDecoder) {
             return Json.decodeFromJsonElement(decoder.decodeJsonElement().jsonObject["type"] ?: return null)
         } else {
             return decoder.decodeStructure(this.descriptor) {
-                var type: KeyboardButtonPollType? = null
+                var type: PollType? = null
                 loop@ while (true) {
                     when (val index = decodeElementIndex(this@KeyboardButtonPollTypeSerializer.descriptor)) {
-                        0                            -> type = decodeSerializableElement(this@KeyboardButtonPollTypeSerializer.descriptor, 0, KeyboardButtonPollType.serializer())
+                        0                            -> type = decodeSerializableElement(this@KeyboardButtonPollTypeSerializer.descriptor, 0, PollType.serializer())
                         CompositeDecoder.DECODE_DONE -> break@loop // https://youtrack.jetbrains.com/issue/KT-42262
                         else                         -> throw SerializationException("Unexpected index: $index")
                     }
@@ -129,36 +135,28 @@ private object KeyboardButtonPollTypeSerializer : KSerializer<KeyboardButtonPoll
             element<String>("type", isOptional = true)
         }
 
-    override fun serialize(encoder: Encoder, value: KeyboardButtonPollType?) {
+    override fun serialize(encoder: Encoder, value: PollType?) {
         encoder.encodeStructure(this.descriptor) {
             if (value != null) {
-                encodeSerializableElement(this@KeyboardButtonPollTypeSerializer.descriptor, 0, KeyboardButtonPollType.serializer(), value)
+                encodeSerializableElement(this@KeyboardButtonPollTypeSerializer.descriptor, 0, PollType.serializer(), value)
             }
         }
     }
 }
 
-@Serializable
-enum class KeyboardButtonPollType {
-    @SerialName("quiz")
-    QUIZ,
-
-    @SerialName("regular")
-    REGULAR
-}
 
 @Serializable
 class RemoveReplyKeyboard(
     @SerialName("remove_keyboard")
     private val removeKeyboard: Boolean,
     val selective: Boolean
-)
+) : ReplyMarkup()
 
 @Serializable
 class InlineKeyboardMarkup(
     @SerialName("inline_keyboard")
     val inlineKeyboard: Array<Array<InlineKeyboardButton>>
-)
+) : ReplyMarkup()
 
 private object InlineKeyboardButtonSerializer : JsonContentPolymorphicSerializer<InlineKeyboardButton>(InlineKeyboardButton::class) {
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out InlineKeyboardButton> =
@@ -234,4 +232,44 @@ sealed class InlineKeyboardButton {
         override val text: String,
         val pay: Boolean
     ) : InlineKeyboardButton()
+}
+
+
+@Serializable
+class ForceReply(
+    @SerialName("force_reply")
+    val forceReply: Boolean,
+    @SerialName("input_field_placeholder")
+    val inputFieldPlaceholder: String? = null,
+    val selective: Boolean? = null
+) : ReplyMarkup()
+
+private object ReplyMarkupDeSerializer : JsonContentPolymorphicSerializer<ReplyMarkup>(ReplyMarkup::class) {
+    override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out ReplyMarkup> {
+        TODO("Not yet implemented")
+    }
+
+}
+private object ReplyMarkupSerializer : KSerializer<ReplyMarkup> {
+    override fun deserialize(decoder: Decoder): ReplyMarkup =
+        ReplyMarkupDeSerializer.deserialize(decoder)
+
+    override val descriptor: SerialDescriptor
+        get() = ReplyMarkupDeSerializer.descriptor
+
+
+    override fun serialize(encoder: Encoder, value: ReplyMarkup) =
+        when (value) {
+            is ReplyKeyboardMarkup  -> ReplyKeyboardMarkup.serializer().serialize(encoder, value)
+            is ForceReply           -> ForceReply.serializer().serialize(encoder, value)
+            is InlineKeyboardMarkup -> InlineKeyboardMarkup.serializer().serialize(encoder, value)
+            is RemoveReplyKeyboard  -> RemoveReplyKeyboard.serializer().serialize(encoder, value)
+        }
+}
+
+@Serializable(with = ReplyMarkupSerializer::class)
+sealed class ReplyMarkup {
+//    companion object {
+//        fun serializer() :KSerializer<ReplyMarkup> = ReplyMarkupSerializer // https://github.com/Kotlin/kotlinx.serialization/issues/1386
+//    }
 }

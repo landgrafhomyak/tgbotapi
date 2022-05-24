@@ -83,7 +83,7 @@ sealed class Update {
         @SerialName("update_id")
         override val id: Long,
         @SerialName("callback_query")
-        val callbackQuery: Unit
+        val callbackQuery: com.github.landgrafhomyak.telegrambotapi.objects.CallbackQuery
     ) : Update()
 
     @Serializable
@@ -107,7 +107,7 @@ sealed class Update {
         @SerialName("update_id")
         override val id: Long,
         @SerialName("poll")
-        val poll: Unit
+        val poll: com.github.landgrafhomyak.telegrambotapi.objects.Poll
     ) : Update()
 
     @Serializable
@@ -115,7 +115,7 @@ sealed class Update {
         @SerialName("update_id")
         override val id: Long,
         @SerialName("poll_answer")
-        val poll: Unit
+        val poll: com.github.landgrafhomyak.telegrambotapi.objects.PollAnswer
     ) : Update()
 
     @Serializable
@@ -141,6 +141,4 @@ sealed class Update {
         @SerialName("chat_join_request")
         val chatMember: Unit
     ) : Update()
-
-
 }

@@ -172,15 +172,49 @@ sealed interface Message {
     sealed interface VideoNote : Message {
         val video: com.github.landgrafhomyak.telegrambotapi.objects.VideoNote
     }
+
+    sealed interface Voice : Message {
+        val voice: com.github.landgrafhomyak.telegrambotapi.objects.Voice
+        val caption: String
+        val captionEntities: Array<MessageEntity>
+    }
+
+    sealed interface Contact : Message {
+        val contact: com.github.landgrafhomyak.telegrambotapi.objects.Contact
+    }
+
+    sealed interface Dice : Message {
+        val dice: com.github.landgrafhomyak.telegrambotapi.objects.Dice
+    }
+
+    sealed interface Game : Message {
+        val game: com.github.landgrafhomyak.telegrambotapi.objects.Game
+    }
+
+    sealed interface Poll : Message {
+        val poll: com.github.landgrafhomyak.telegrambotapi.objects.Poll
+    }
 }
 
-private abstract class MessageTypePolymorphicSerializer<T : Message, TEXT : T, ANIMATION : T, AUDIO : T, DOCUMENT : T, PHOTO : T>(
+private abstract class MessageTypePolymorphicSerializer<
+        T : Message,
+        TEXT : T, ANIMATION : T, AUDIO : T, DOCUMENT : T, PHOTO : T, STICKER : T, VIDEO : T, VIDEO_NOTE : T, VOICE : T,
+        CONTACT : T, DICE : T, GAME : T, POLL : T
+        >(
     baseClass: KClass<T>,
     private val textSerializer: KSerializer<TEXT>,
     private val animationSerializer: KSerializer<ANIMATION>,
     private val audioSerializer: KSerializer<AUDIO>,
     private val documentSerializer: KSerializer<DOCUMENT>,
     private val photoSerializer: KSerializer<PHOTO>,
+    private val stickerSerializer: KSerializer<STICKER>,
+    private val videoSerializer: KSerializer<VIDEO>,
+    private val videoNotesSerializer: KSerializer<VIDEO_NOTE>,
+    private val voiceSerializer: KSerializer<VOICE>,
+    private val contactSerializer: KSerializer<CONTACT>,
+    private val diceSerializer: KSerializer<DICE>,
+    private val gameSerializer: KSerializer<GAME>,
+    private val pollSerializer: KSerializer<POLL>,
 ) : JsonContentPolymorphicSerializer<T>(baseClass) {
 
     @Suppress("UNCHECKED_CAST")
@@ -192,60 +226,104 @@ private abstract class MessageTypePolymorphicSerializer<T : Message, TEXT : T, A
                 "audio" in o      -> this.audioSerializer
                 "document" in o   -> this.documentSerializer
                 "photo" in o      -> this.photoSerializer
+                "sticker" in o    -> this.stickerSerializer
+                "video" in o      -> this.videoSerializer
+                "video_note" in o -> this.videoNotesSerializer
+                "voice" in o      -> this.voiceSerializer
+                "contact" in o    -> this.voiceSerializer
+                "dice" in o       -> this.voiceSerializer
+                "game" in o       -> this.voiceSerializer
+                "poll" in o       -> this.voiceSerializer
                 else              -> throw SerializationException("Can't determine message type")
             }
         }
 }
 
-private object UserMessageSerializer : MessageTypePolymorphicSerializer<UserMessage, UserTextMessage, UserAnimationMessage, UserAudioMessage, UserDocumentMessage, UserPhotoMessage>(
+private object UserMessageSerializer : MessageTypePolymorphicSerializer<
+        UserMessage,
+        UserTextMessage, UserAnimationMessage, UserAudioMessage, UserDocumentMessage, UserPhotoMessage, UserStickerMessage, UserVideoMessage, UserVideoNoteMessage, UserVoiceMessage,
+        UserContactMessage, UserDiceMessage, UserGameMessage, UserPollMessage
+        >(
     UserMessage::class,
     UserTextMessage.serializer(),
     UserAnimationMessage.serializer(),
     UserAudioMessage.serializer(),
     UserDocumentMessage.serializer(),
     UserPhotoMessage.serializer(),
+    UserStickerMessage.serializer(),
+    UserVideoMessage.serializer(),
+    UserVideoNoteMessage.serializer(),
+    UserVoiceMessage.serializer(),
+    UserContactMessage.serializer(),
+    UserDiceMessage.serializer(),
+    UserGameMessage.serializer(),
+    UserPollMessage.serializer(),
 )
 
-private object ChannelPostSerializer : MessageTypePolymorphicSerializer<ChannelPost, ChannelTextPost, ChannelAnimationPost, ChannelAudioPost, ChannelDocumentPost, ChannelPhotoPost>(
+private object ChannelPostSerializer : MessageTypePolymorphicSerializer<
+        ChannelPost,
+        ChannelTextPost, ChannelAnimationPost, ChannelAudioPost, ChannelDocumentPost, ChannelPhotoPost, ChannelStickerPost, ChannelVideoPost, ChannelVideoNotePost, ChannelVoicePost,
+        ChannelContactPost, ChannelDicePost, ChannelGamePost, ChannelPollPost
+        >(
     ChannelPost::class,
     ChannelTextPost.serializer(),
     ChannelAnimationPost.serializer(),
     ChannelAudioPost.serializer(),
     ChannelDocumentPost.serializer(),
-    ChannelPhotoPost.serializer()
+    ChannelPhotoPost.serializer(),
+    ChannelStickerPost.serializer(),
+    ChannelVideoPost.serializer(),
+    ChannelVideoNotePost.serializer(),
+    ChannelVoicePost.serializer(),
+    ChannelContactPost.serializer(),
+    ChannelDicePost.serializer(),
+    ChannelGamePost.serializer(),
+    ChannelPollPost.serializer(),
 )
 
-private object AnonymousAdminMessageSerializer : MessageTypePolymorphicSerializer<AnonymousAdminMessage, AnonymousAdminTextMessage, AnonymousAdminAnimationMessage, AnonymousAdminAudioMessage, AnonymousAdminDocumentMessage, AnonymousAdminPhotoMessage>(
+private object AnonymousAdminMessageSerializer : MessageTypePolymorphicSerializer<
+        AnonymousAdminMessage,
+        AnonymousAdminTextMessage, AnonymousAdminAnimationMessage, AnonymousAdminAudioMessage, AnonymousAdminDocumentMessage, AnonymousAdminPhotoMessage, AnonymousAdminStickerMessage, AnonymousAdminVideoMessage, AnonymousAdminVideoNoteMessage, AnonymousAdminVoiceMessage,
+        AnonymousAdminContactMessage, AnonymousAdminDiceMessage, AnonymousAdminGameMessage, AnonymousAdminPollMessage
+        >(
     AnonymousAdminMessage::class,
     AnonymousAdminTextMessage.serializer(),
     AnonymousAdminAnimationMessage.serializer(),
     AnonymousAdminAudioMessage.serializer(),
     AnonymousAdminDocumentMessage.serializer(),
-    AnonymousAdminPhotoMessage.serializer()
+    AnonymousAdminPhotoMessage.serializer(),
+    AnonymousAdminStickerMessage.serializer(),
+    AnonymousAdminVideoMessage.serializer(),
+    AnonymousAdminVideoNoteMessage.serializer(),
+    AnonymousAdminVoiceMessage.serializer(),
+    AnonymousAdminContactMessage.serializer(),
+    AnonymousAdminDiceMessage.serializer(),
+    AnonymousAdminGameMessage.serializer(),
+    AnonymousAdminPollMessage.serializer(),
 )
 
 
 @Serializable(with = UserMessageSerializer::class)
-sealed interface UserMessage : Message {
-    val from: User
+sealed class UserMessage : Message {
+    abstract val from: UserOrBot
 }
 
 @Serializable(with = ChannelPostSerializer::class)
-sealed interface ChannelPost : Message {
-    val senderChat: Channel
-    val isAutomaticForward: Boolean
+sealed class ChannelPost : Message {
+    abstract val senderChat: Channel
+    abstract val isAutomaticForward: Boolean
 }
 
 @Serializable(with = AnonymousAdminMessageSerializer::class)
-sealed interface AnonymousAdminMessage : Message {
-    val senderChat: Channel
+sealed class AnonymousAdminMessage : Message {
+    abstract val senderChat: Channel
 }
 
 @Serializable
 private class UserTextMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -261,7 +339,7 @@ private class UserTextMessage(
     override val replyMarkup: InlineKeyboardMarkup? = null,
     override val text: String,
     override val entities: Array<MessageEntity> = arrayOf()
-) : UserMessage, Message.Text
+) : UserMessage(), Message.Text
 
 @Serializable
 private class ChannelTextPost(
@@ -286,7 +364,7 @@ private class ChannelTextPost(
     override val isAutomaticForward: Boolean,
     override val text: String,
     override val entities: Array<MessageEntity> = arrayOf()
-) : ChannelPost, Message.Text
+) : ChannelPost(), Message.Text
 
 @Serializable
 private class AnonymousAdminTextMessage(
@@ -309,14 +387,14 @@ private class AnonymousAdminTextMessage(
     override val replyMarkup: InlineKeyboardMarkup? = null,
     override val text: String,
     override val entities: Array<MessageEntity> = arrayOf()
-) : AnonymousAdminMessage, Message.Text
+) : AnonymousAdminMessage(), Message.Text
 
 
 @Serializable
 private class UserAnimationMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -334,7 +412,7 @@ private class UserAnimationMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : UserMessage, Message.Animation
+) : UserMessage(), Message.Animation
 
 @Serializable
 private class ChannelAnimationPost(
@@ -361,7 +439,7 @@ private class ChannelAnimationPost(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : ChannelPost, Message.Animation
+) : ChannelPost(), Message.Animation
 
 @Serializable
 private class AnonymousAdminAnimationMessage(
@@ -386,13 +464,13 @@ private class AnonymousAdminAnimationMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : AnonymousAdminMessage, Message.Animation
+) : AnonymousAdminMessage(), Message.Animation
 
 @Serializable
 private class UserAudioMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -410,7 +488,7 @@ private class UserAudioMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : UserMessage, Message.Audio
+) : UserMessage(), Message.Audio
 
 @Serializable
 private class ChannelAudioPost(
@@ -437,7 +515,7 @@ private class ChannelAudioPost(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : ChannelPost, Message.Audio
+) : ChannelPost(), Message.Audio
 
 @Serializable
 private class AnonymousAdminAudioMessage(
@@ -462,13 +540,13 @@ private class AnonymousAdminAudioMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : AnonymousAdminMessage, Message.Audio
+) : AnonymousAdminMessage(), Message.Audio
 
 @Serializable
 private class UserDocumentMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -486,7 +564,7 @@ private class UserDocumentMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : UserMessage, Message.Document
+) : UserMessage(), Message.Document
 
 @Serializable
 private class ChannelDocumentPost(
@@ -513,7 +591,7 @@ private class ChannelDocumentPost(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : ChannelPost, Message.Document
+) : ChannelPost(), Message.Document
 
 @Serializable
 private class AnonymousAdminDocumentMessage(
@@ -538,13 +616,13 @@ private class AnonymousAdminDocumentMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : AnonymousAdminMessage, Message.Document
+) : AnonymousAdminMessage(), Message.Document
 
 @Serializable
 private class UserPhotoMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -562,7 +640,7 @@ private class UserPhotoMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : UserMessage, Message.Photo
+) : UserMessage(), Message.Photo
 
 @Serializable
 private class ChannelPhotoPost(
@@ -589,7 +667,7 @@ private class ChannelPhotoPost(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : ChannelPost, Message.Photo
+) : ChannelPost(), Message.Photo
 
 @Serializable
 private class AnonymousAdminPhotoMessage(
@@ -614,13 +692,13 @@ private class AnonymousAdminPhotoMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : AnonymousAdminMessage, Message.Photo
+) : AnonymousAdminMessage(), Message.Photo
 
 @Serializable
 private class UserStickerMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -635,7 +713,7 @@ private class UserStickerMessage(
     @SerialName("reply_markup")
     override val replyMarkup: InlineKeyboardMarkup? = null,
     override val sticker: Sticker,
-) : UserMessage, Message.Sticker
+) : UserMessage(), Message.Sticker
 
 @Serializable
 private class ChannelStickerPost(
@@ -659,7 +737,7 @@ private class ChannelStickerPost(
     @SerialName("is_automatic_forward")
     override val isAutomaticForward: Boolean,
     override val sticker: Sticker,
-) : ChannelPost, Message.Sticker
+) : ChannelPost(), Message.Sticker
 
 @Serializable
 private class AnonymousAdminStickerMessage(
@@ -681,13 +759,13 @@ private class AnonymousAdminStickerMessage(
     @SerialName("reply_markup")
     override val replyMarkup: InlineKeyboardMarkup? = null,
     override val sticker: Sticker,
-) : AnonymousAdminMessage, Message.Sticker
+) : AnonymousAdminMessage(), Message.Sticker
 
 @Serializable
 private class UserVideoMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -705,7 +783,7 @@ private class UserVideoMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : UserMessage, Message.Video
+) : UserMessage(), Message.Video
 
 @Serializable
 private class ChannelVideoPost(
@@ -732,7 +810,7 @@ private class ChannelVideoPost(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : ChannelPost, Message.Video
+) : ChannelPost(), Message.Video
 
 @Serializable
 private class AnonymousAdminVideoMessage(
@@ -757,13 +835,13 @@ private class AnonymousAdminVideoMessage(
     override val caption: String,
     @SerialName("caption_entities")
     override val captionEntities: Array<MessageEntity> = arrayOf()
-) : AnonymousAdminMessage, Message.Video
+) : AnonymousAdminMessage(), Message.Video
 
 @Serializable
 private class UserVideoNoteMessage(
     @SerialName("message_id")
     override val id: MessageId,
-    override val from: User,
+    override val from: UserOrBot,
     override val date: Instant,
     override val chat: Chat,
     @SerialName("reply_to_message")
@@ -778,7 +856,7 @@ private class UserVideoNoteMessage(
     @SerialName("reply_markup")
     override val replyMarkup: InlineKeyboardMarkup? = null,
     override val video: VideoNote,
-) : UserMessage, Message.VideoNote
+) : UserMessage(), Message.VideoNote
 
 @Serializable
 private class ChannelVideoNotePost(
@@ -802,7 +880,7 @@ private class ChannelVideoNotePost(
     @SerialName("is_automatic_forward")
     override val isAutomaticForward: Boolean,
     override val video: VideoNote,
-) : ChannelPost, Message.VideoNote
+) : ChannelPost(), Message.VideoNote
 
 @Serializable
 private class AnonymousAdminVideoNoteMessage(
@@ -824,4 +902,349 @@ private class AnonymousAdminVideoNoteMessage(
     @SerialName("reply_markup")
     override val replyMarkup: InlineKeyboardMarkup? = null,
     override val video: VideoNote,
-) : AnonymousAdminMessage, Message.VideoNote
+) : AnonymousAdminMessage(), Message.VideoNote
+
+@Serializable
+private class UserVoiceMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    override val from: UserOrBot,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val voice: Voice,
+    override val caption: String,
+    @SerialName("caption_entities")
+    override val captionEntities: Array<MessageEntity> = arrayOf()
+) : UserMessage(), Message.Voice
+
+@Serializable
+private class ChannelVoicePost(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    @SerialName("is_automatic_forward")
+    override val isAutomaticForward: Boolean,
+    override val voice: Voice,
+    override val caption: String,
+    @SerialName("caption_entities")
+    override val captionEntities: Array<MessageEntity> = arrayOf()
+) : ChannelPost(), Message.Voice
+
+@Serializable
+private class AnonymousAdminVoiceMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val voice: Voice,
+    override val caption: String,
+    @SerialName("caption_entities")
+    override val captionEntities: Array<MessageEntity> = arrayOf()
+) : AnonymousAdminMessage(), Message.Voice
+
+
+@Serializable
+private class UserContactMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    override val from: UserOrBot,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val contact: Contact
+) : UserMessage(), Message.Contact
+
+@Serializable
+private class ChannelContactPost(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    @SerialName("is_automatic_forward")
+    override val isAutomaticForward: Boolean,
+    override val contact: Contact
+) : ChannelPost(), Message.Contact
+
+@Serializable
+private class AnonymousAdminContactMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val contact: Contact
+) : AnonymousAdminMessage(), Message.Contact
+
+@Serializable
+private class UserDiceMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    override val from: UserOrBot,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val dice: Dice
+) : UserMessage(), Message.Dice
+
+@Serializable
+private class ChannelDicePost(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    @SerialName("is_automatic_forward")
+    override val isAutomaticForward: Boolean,
+    override val dice: Dice
+) : ChannelPost(), Message.Dice
+
+@Serializable
+private class AnonymousAdminDiceMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val dice: Dice
+) : AnonymousAdminMessage(), Message.Dice
+
+@Serializable
+private class UserGameMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    override val from: UserOrBot,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val game: Game
+) : UserMessage(), Message.Game
+
+@Serializable
+private class ChannelGamePost(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    @SerialName("is_automatic_forward")
+    override val isAutomaticForward: Boolean,
+    override val game: Game
+) : ChannelPost(), Message.Game
+
+@Serializable
+private class AnonymousAdminGameMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val game: Game
+) : AnonymousAdminMessage(), Message.Game
+
+@Serializable
+private class UserPollMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    override val from: UserOrBot,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val poll: Poll
+) : UserMessage(), Message.Poll
+
+@Serializable
+private class ChannelPollPost(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    @SerialName("is_automatic_forward")
+    override val isAutomaticForward: Boolean,
+    override val poll: Poll
+) : ChannelPost(), Message.Poll
+
+@Serializable
+private class AnonymousAdminPollMessage(
+    @SerialName("message_id")
+    override val id: MessageId,
+    @SerialName("sender_chat")
+    override val senderChat: Channel,
+    override val date: Instant,
+    override val chat: Chat,
+    @SerialName("reply_to_message")
+    override val replyToMessage: Message? = null,
+    @SerialName("via_bot")
+    override val viaBot: Bot? = null,
+    @SerialName("edit_date")
+    override val editDate: Instant? = null,
+    @SerialName("has_protected_content")
+    override val hasProtectedContent: Boolean? = null,
+    override val forward: Forward? = null,
+    @SerialName("reply_markup")
+    override val replyMarkup: InlineKeyboardMarkup? = null,
+    override val poll: Poll
+) : AnonymousAdminMessage(), Message.Poll

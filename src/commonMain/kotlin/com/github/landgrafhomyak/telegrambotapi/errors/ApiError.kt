@@ -5,4 +5,4 @@ open class ApiError(
     val methodName: String,
     val errorCode: Long,
     val description: String?
-) : RuntimeException(methodName + (description?.run { ": ${this@run}" } ?: ""))
+) : RuntimeException("$methodName: [$errorCode]" + (description?.run { " ${this@run}" } ?: ""))
